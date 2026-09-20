@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wiskunde B-stroom</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f6f8;
+            color: #222;
+        }
+
+        header {
+            background: #1f4e79;
+            color: white;
+            text-align: center;
+            padding: 35px 20px;
+        }
+
+        header h1 {
+            margin: 0 0 10px;
+            font-size: 36px;
+        }
+
+        header p {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .apps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .app {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .app h3 {
+            margin-top: 0;
+            font-size: 21px;
+        }
+
+        .app p {
+            color: #666;
+            min-height: 45px;
+        }
+
+        .button {
+            display: inline-block;
+            background: #1f4e79;
+            color: white;
+            text-decoration: none;
+            padding: 11px 20px;
+            border-radius: 7px;
+            margin-top: 10px;
+        }
+
+        .button:hover {
+            background: #163a5c;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #777;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>🧮 Wiskunde B-stroom</h1>
+    <p>Interactieve oefeningen</p>
+</header>
+
+<main>
+
+    <h2>Kies een oefening</h2>
+
+    <div class="apps">
+
+        <div class="app">
+            <h3>Getallen splitsen</h3>
+            <p>Ontbind een getal in rangen.</p>
+            <a class="button" href="getallensplitsen/">Start</a>
+        </div>
+
+        <div class="app">
+            <h3>Getallen samenstellen</h3>
+            <p>Stel een getal samen uit rangen.</p>
+            <a class="button" href="getalsamenstellen/">Start</a>
+        </div>
+
+        <div class="app">
+            <h3>Getallen voluit</h3>
+            <p>Schrijf getallen in cijfers.</p>
+            <a class="button" href="getallen-voluit/">Start</a>
+        </div>
+
+        <div class="app">
+            <h3>Getallenas</h3>
+            <p>Oefen met getallen op de getallenas.</p>
+            <a class="button" href="getallenas/">Start</a>
+        </div>
+
+    </div>
+
+</main>

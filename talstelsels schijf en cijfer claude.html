@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="nl-BE">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Talstelsels — Positiewaarde</title>
+<style>
+    :root {
+        --bg-color: #f0f4f8;
+        --card-bg: #ffffff;
+        --primary: #2c3e50;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-color);
+        margin: 0;
+        padding: 15px;
+        color: #333;
+        min-height: 100vh;
+    }
+
+    button, .digit-btn, .counter, .btn-op, .drop-zone, .btn-add, label {
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: manipulation;
+    }
+
+    input {
+        font-size: 16px; /* voorkomt automatisch inzoomen op iPad/iOS bij focus */
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ============ MENU ============ */
+    #view-menu {
+        max-width: 720px;
+        margin: 40px auto;
+    }
+    #view-menu h1 {
+        text-align: center;
+        color: var(--primary);
+        font-size: 26px;
+        margin-bottom: 6px;
+    }
+    #view-menu p.subtitle {
+        text-align: center;
+        color: #6b7a89;
+        margin-top: 0;
+        margin-bottom: 30px;
+    }
+    .menu-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    @media (max-width: 600px) {
+        .menu-grid { grid-template-columns: 1fr; }
+    }
+    .menu-tile {
+        background: var(--card-bg);
+        border: none;
+        border-radius: 16px;
+        padding: 30px 20px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        cursor: pointer;
+        text-align: center;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+    .menu-tile:active {
+        transform: scale(0.97);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .menu-tile .icon {
+        font-size: 48px;
+        line-height: 1;
+    }
+    .menu-tile .tile-title {
+        font-size: 19px;
+        font-weight: bold;
+        color: var(--primary);
+    }
+    .menu-tile .tile-desc {
+        font-size: 14px;
+        color: #6b7a89;
+    }
+    .menu-tile.tile-schijven .icon { color: #2980b9; }
+    .menu-tile.tile-cijfers .icon { color: #27ae60; }
+
+    /* ============ TERUGKNOP (gedeeld) ============ */
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--card-bg);
+        border: 1px solid #dcdfe3;
+        color: var(--primary);
+        font-weight: bold;
+        font-size: 14px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-bottom: 12px;
+    }
+    .back-btn:active { background: #eef1f4; }
+
+    /* ============ APP 1: SCHIJFJES ============ */
+    #view-schijven h1 { text-align: center; color: var(--primary); margin-bottom: 15px; font-size: 22px;}
+
+    #view-schijven .controls {
+        display: flex;
+        justify-content: center;
+        gap: 15px 25px;
+        background: var(--card-bg);
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    #view-schijven .controls label {
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    #view-schijven .controls input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+    }
+
+    #view-schijven .board {
+        display: flex;
+        justify-content: center;
+        gap: 2px;
+        background: #95a5a6;
+        padding: 4px;
+        border-radius: 8px;
+        overflow-x: auto;
+    }
+    #view-schijven .column {
+        background: white;
+        min-width: 95px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-radius: 4px;
+        position: relative;
+    }
+    #view-schijven .column.comma-after::after {
+        content: ",";
+        position: absolute;
+        right: -11px;
+        bottom: 10px;
+        font-size: 48px;
+        font-weight: bold;
+        color: #e74c3c;
+        z-index: 10;
+    }
+    #view-schijven .header {
+        width: 100%;
+        text-align: center;
+        padding: 10px 0;
+        font-weight: bold;
+        color: white;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+    }
+    #view-schijven .drop-zone {
+        width: 100%;
+        min-height: 320px;
+        display: flex;
+        flex-direction: column-reverse;
+        align-items: center;
+        gap: 5px;
+        padding: 10px 0;
+        background: #fafafa;
+        cursor: pointer;
+    }
+    #view-schijven .counter {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-weight: bold;
+        font-size: 13px;
+        box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+    }
+    #view-schijven .btn-add {
+        margin: 8px 0;
+        padding: 10px 14px;
+        min-height: 40px;
+        background: #ecf0f1;
+        border: 1px solid #bdc3c7;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    #view-schijven .btn-add:active { background: #e0e0e0; }
+
+    #view-schijven .drop-zone.regroup-glow {
+        background: rgba(255, 213, 79, 0.45);
+        box-shadow: inset 0 0 0 4px rgba(255, 179, 0, 0.9);
+        transition: background 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    #view-schijven .counter.counter-pop {
+        animation: s1CounterPop 0.45s ease;
+    }
+
+    @keyframes s1CounterPop {
+        0%   { transform: scale(0.2); opacity: 0; }
+        60%  { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    #view-schijven .M   .header, #view-schijven .M   .counter { background-color: #8e44ad; }
+    #view-schijven .HD  .header, #view-schijven .HD  .counter { background-color: #2980b9; }
+    #view-schijven .TD  .header, #view-schijven .TD  .counter { background-color: #3498db; }
+    #view-schijven .D   .header, #view-schijven .D   .counter { background-color: #1abc9c; }
+    #view-schijven .H   .header, #view-schijven .H   .counter { background-color: #2ecc71; }
+    #view-schijven .T   .header, #view-schijven .T   .counter { background-color: #f1c40f; color: #333; }
+    #view-schijven .E   .header, #view-schijven .E   .counter { background-color: #e67e22; }
+    #view-schijven .t   .header, #view-schijven .t   .counter { background-color: #e74c3c; }
+    #view-schijven .h   .header, #view-schijven .h   .counter { background-color: #d35400; }
+    #view-schijven .d   .header, #view-schijven .d   .counter { background-color: #c0392b; }
+
+    #view-schijven .displays {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+    #view-schijven .display-card {
+        background: var(--card-bg);
+        padding: 12px 25px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        font-size: 20px;
+        font-weight: bold;
+        min-width: 320px;
+        text-align: center;
+    }
+    #view-schijven .clear-btn {
+        margin-top: 15px;
+        padding: 12px 22px;
+        min-height: 44px;
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    #view-schijven .clear-btn:active { background: #c0392b; }
+
+    /* ============ APP 2: CIJFERS ============ */
+    #view-cijfers h1 { text-align: center; color: var(--primary); margin: 0 0 10px 0; font-size: 20px; }
+
+    #view-cijfers .teacher-panel {
+        background: var(--card-bg);
+        padding: 8px 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    #view-cijfers .teacher-panel label { font-weight: bold; font-size: 14px; }
+    #view-cijfers .teacher-panel input {
+        padding: 8px 10px;
+        width: 140px;
+        border: 2px solid #bdc3c7;
+        border-radius: 6px;
+        text-align: center;
+        font-weight: bold;
+    }
+    #view-cijfers .btn-load {
+        padding: 8px 14px;
+        min-height: 40px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+    }
+    #view-cijfers .btn-load:active { background: #2980b9; }
+
+    #view-cijfers .controls-panel {
+        background: var(--card-bg);
+        padding: 8px 12px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    #view-cijfers .btn-group {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    #view-cijfers .btn-op {
+        padding: 8px 12px;
+        min-height: 38px;
+        font-size: 13px;
+        font-weight: bold;
+        border-radius: 4px;
+        border: 1px solid transparent;
+        cursor: pointer;
+    }
+    #view-cijfers .btn-op:active { transform: scale(0.96); }
+    #view-cijfers .btn-mult { background: #f3e5f5; color: #6a1b9a; border-color: #ce93d8; }
+    #view-cijfers .btn-mult:active { background: #e1bee7; }
+    #view-cijfers .btn-div { background: #e0f7fa; color: #00838f; border-color: #80deea; }
+    #view-cijfers .btn-div:active { background: #b2ebf2; }
+    #view-cijfers .btn-add-sub { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+    #view-cijfers .btn-add-sub:active { background: #c8e6c9; }
+    #view-cijfers .btn-sub { background: #ffebee; color: #c62828; border-color: #ef9a9a; }
+    #view-cijfers .btn-sub:active { background: #ffcdd2; }
+
+    #view-cijfers .board {
+        display: flex;
+        justify-content: center;
+        gap: 2px;
+        background: #95a5a6;
+        padding: 3px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        overflow-x: auto;
+    }
+    #view-cijfers .column {
+        background: white;
+        width: 55px;
+        min-width: 55px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-radius: 3px;
+        position: relative;
+        padding-bottom: 4px;
+    }
+    #view-cijfers .column.comma-after::after {
+        content: ",";
+        position: absolute;
+        right: -8px;
+        bottom: 2px;
+        font-size: 36px;
+        font-weight: bold;
+        color: #e74c3c;
+        z-index: 10;
+    }
+    #view-cijfers .header {
+        width: 100%;
+        text-align: center;
+        padding: 4px 0;
+        font-weight: bold;
+        color: white;
+        font-size: 13px;
+        border-top-left-radius: 3px;
+        border-top-right-radius: 3px;
+    }
+    #view-cijfers .digit-btn {
+        background: #f1f2f6;
+        border: 1px solid #dcdde1;
+        width: 100%;
+        padding: 8px 0;
+        min-height: 38px;
+        font-size: 14px;
+        cursor: pointer;
+        font-weight: bold;
+        color: #555;
+    }
+    #view-cijfers .digit-btn:active { background: #e1e2e6; }
+    #view-cijfers .digit-display {
+        font-size: 28px;
+        font-weight: bold;
+        color: #2c3e50;
+        padding: 4px 0;
+    }
+
+    #view-cijfers .M   .header { background-color: #8e44ad; }
+    #view-cijfers .HD  .header { background-color: #2980b9; }
+    #view-cijfers .TD  .header { background-color: #3498db; }
+    #view-cijfers .D   .header { background-color: #1abc9c; }
+    #view-cijfers .H   .header { background-color: #2ecc71; }
+    #view-cijfers .T   .header { background-color: #f1c40f; color: #333; }
+    #view-cijfers .E   .header { background-color: #e67e22; }
+    #view-cijfers .t   .header { background-color: #e74c3c; }
+    #view-cijfers .h   .header { background-color: #d35400; }
+    #view-cijfers .d   .header { background-color: #c0392b; }
+
+    #view-cijfers .controls {
+        display: flex;
+        justify-content: center;
+        gap: 15px 25px;
+        background: var(--card-bg);
+        padding: 10px 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+    #view-cijfers .controls label {
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    #view-cijfers .controls input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+    }
+
+    #view-cijfers .displays {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    #view-cijfers .display-card {
+        background: var(--card-bg);
+        padding: 8px 12px;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        font-size: 14px;
+        font-weight: bold;
+    }
+    #view-cijfers .display-card span { color: #2980b9; }
+    #view-cijfers .history-box {
+        grid-column: span 2;
+        background: var(--card-bg);
+        padding: 8px 12px;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        font-size: 13px;
+    }
+    #view-cijfers .history-list {
+        font-family: monospace;
+        color: #555;
+        max-height: 60px;
+        overflow-y: auto;
+    }
+    #view-cijfers .clear-btn {
+        padding: 8px 14px;
+        min-height: 38px;
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 12px;
+    }
+    #view-cijfers .clear-btn:active { background: #c0392b; }
+</style>
+</head>
+<body>
+
+<!-- ============ MENU ============ -->
+<div class="view active" id="view-menu">
+    <h1>Talstelsels — Positiewaarde</h1>
+    <p class="subtitle">Kies een oefenvorm</p>
+    <div class="menu-grid">
+        <button class="menu-tile tile-schijven" onclick="showView('schijven')">
+            <div class="icon">&#9899;</div>
+            <div class="tile-title">Schijfjes</div>
+            <div class="tile-desc">Getallen opbouwen met plaatswaarde-schijfjes per rang</div>
+        </button>
+        <button class="menu-tile tile-cijfers" onclick="showView('cijfers')">
+            <div class="icon">&#128290;</div>
+            <div class="tile-title">Cijfers &amp; bewerkingen</div>
+            <div class="tile-desc">Getallen ingeven, cijfers per rang instellen en × / : bewerkingen oefenen</div>
+        </button>
+    </div>
+</div>
+
+<!-- ============ APP 1: SCHIJFJES ============ -->
+<div class="view" id="view-schijven">
+    <button class="back-btn" onclick="showView('menu')">&#8592; Terug naar menu</button>
+    <h1>Positiewaarde &amp; Rangen Schema</h1>
+
+    <div class="controls">
+        <label><input type="checkbox" id="s1-toggle-d" checked onchange="SchijvenApp.toggleColumnD()"> Toon Duizendsten (d)</label>
+        <label><input type="checkbox" id="s1-toggle-num" checked onchange="SchijvenApp.updateDisplays()"> Toon Getal</label>
+        <label><input type="checkbox" id="s1-toggle-split" checked onchange="SchijvenApp.updateDisplays()"> Toon Gesplitste Vorm</label>
+        <label><input type="checkbox" id="s1-toggle-words" checked onchange="SchijvenApp.updateDisplays()"> Toon Gelezen Vorm</label>
+    </div>
+
+    <div class="board" id="s1-board"></div>
+
+    <div style="text-align: center;">
+        <button class="clear-btn" onclick="SchijvenApp.clearAll()">Alles Wis</button>
+    </div>
+
+    <div class="displays">
+        <div class="display-card" id="s1-card-num">Getal: <span id="s1-val-num">0</span></div>
+        <div class="display-card" id="s1-card-split">Gesplitst: <span id="s1-val-split">0E</span></div>
+        <div class="display-card" id="s1-card-words">Uitspraak: <span id="s1-val-words">nul</span></div>
+    </div>
+</div>
+
+<!-- ============ APP 2: CIJFERS ============ -->
+<div class="view" id="view-cijfers">
+    <button class="back-btn" onclick="showView('menu')">&#8592; Terug naar menu</button>
+    <h1>Positiewaarde &amp; Rangen Schema</h1>
+
+    <div class="teacher-panel">
+        <label for="s2-teacher-input">Geef een getal in:</label>
+        <input type="text" id="s2-teacher-input" inputmode="decimal" placeholder="bv. 135,6" onkeypress="CijfersApp.handleKeyPress(event)">
+        <button class="btn-load" onclick="CijfersApp.loadTeacherInput()">Laad in schema</button>
+        <button class="clear-btn" onclick="CijfersApp.clearAll()">Wis Alles</button>
+    </div>
+
+    <div class="controls">
+        <label><input type="checkbox" id="s2-toggle-d" checked onchange="CijfersApp.toggleColumnD()"> Toon Duizendsten (d)</label>
+    </div>
+
+    <div class="controls-panel">
+        <div class="btn-group">
+            <button class="btn-op btn-mult" onclick="CijfersApp.multiply(10)">× 10</button>
+            <button class="btn-op btn-mult" onclick="CijfersApp.multiply(100)">× 100</button>
+            <button class="btn-op btn-mult" onclick="CijfersApp.multiply(1000)">× 1000</button>
+            <button class="btn-op btn-div" onclick="CijfersApp.divide(10)">: 10</button>
+            <button class="btn-op btn-div" onclick="CijfersApp.divide(100)">: 100</button>
+            <button class="btn-op btn-div" onclick="CijfersApp.divide(1000)">: 1000</button>
+        </div>
+        <div class="btn-group">
+            <button class="btn-op btn-add-sub" onclick="CijfersApp.addValue(1000)">+ 1000</button>
+            <button class="btn-op btn-add-sub" onclick="CijfersApp.addValue(100)">+ 100</button>
+            <button class="btn-op btn-add-sub" onclick="CijfersApp.addValue(10)">+ 10</button>
+            <button class="btn-op btn-add-sub" onclick="CijfersApp.addValue(1)">+ 1</button>
+            <button class="btn-op btn-sub" onclick="CijfersApp.addValue(-1000)">- 1000</button>
+            <button class="btn-op btn-sub" onclick="CijfersApp.addValue(-100)">- 100</button>
+            <button class="btn-op btn-sub" onclick="CijfersApp.addValue(-10)">- 10</button>
+            <button class="btn-op btn-sub" onclick="CijfersApp.addValue(-1)">- 1</button>
+        </div>
+    </div>
+
+    <div class="board" id="s2-board"></div>
+
+    <div class="displays">
+        <div class="display-card">Getal: <span id="s2-val-num">0</span></div>
+        <div class="display-card">Gesplitst: <span id="s2-val-split">0E</span></div>
+        <div class="display-card" style="grid-column: span 2;">Uitspraak: <span id="s2-val-words">nul</span></div>
+
+        <div class="history-box">
+            <strong>Historiek:</strong>
+            <div class="history-list" id="s2-history-list">Geen bewerkingen uitgevoerd.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ============ MENU-NAVIGATIE ============ */
+function showView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    window.scrollTo(0, 0);
+}
+
+/* ============ Gedeelde Nederlandse spreektaal-helpers ============ */
+const NL_eenheden = ["", "één", "twee", "drie", "vier", "vijf", "zes", "zeven", "acht", "negen"];
+const NL_tientallen = ["", "tien", "twintig", "dertig", "veertig", "vijftig", "zestig", "zeventig", "tachtig", "negentig"];
+const NL_tienAnderen = { 11: "elf", 12: "twaalf", 13: "dertien", 14: "veertien", 15: "vijftien", 16: "zestien", 17: "zeventien", 18: "achttien", 19: "negentien" };
+
+function NL_numberToDutch(n) {
+    if (n === 0) return "nul";
+    let str = "";
+    if (n >= 1000000) {
+        let m = Math.floor(n / 1000000);
+        str += (m === 1 ? "één miljoen " : NL_numberToDutch(m) + " miljoen ");
+        n %= 1000000;
+    }
+    if (n >= 1000) {
+        let d = Math.floor(n / 1000);
+        str += (d === 1 ? "duizend" : NL_numberToDutch(d) + "duizend");
+        n %= 1000;
+    }
+    if (n >= 100) {
+        let h = Math.floor(n / 100);
+        str += (h === 1 ? "honderd" : NL_eenheden[h] + "honderd");
+        n %= 100;
+    }
+    if (n > 0) {
+        if (n < 10) {
+            str += NL_eenheden[n];
+        } else if (n > 10 && n < 20) {
+            str += NL_tienAnderen[n];
+        } else if (n % 10 === 0) {
+            str += NL_tientallen[n / 10];
+        } else {
+            let e = n % 10;
+            let t = Math.floor(n / 10);
+            let en = (e === 2 || e === 3) ? "ën" : "en";
+            str += NL_eenheden[e] + en + NL_tientallen[t];
+        }
+    }
+    return str.trim();
+}
+
+function NL_getReadVersion(num) {
+    if (num === 0) return "nul";
+    const parts = num.toString().split('.');
+    let integerPart = parseInt(parts[0]);
+    let decimalPart = parts[1] ? parts[1] : null;
+    let result = NL_numberToDutch(integerPart);
+    if (decimalPart) {
+        result += " komma ";
+        result += decimalPart.split('').map(d => parseInt(d) === 0 ? "nul" : NL_eenheden[parseInt(d)]).join(' ');
+    }
+    return result;
+}
+
+/* ============ APP 1: SCHIJFJES ============ */
+const SchijvenApp = (function () {
+    const columnsData = [
+        { key: 'M',  label: 'M',  name: 'Miljoentallen', val: 1000000 },
+        { key: 'HD', label: 'HD', name: 'Honderdduizendtallen', val: 100000 },
+        { key: 'TD', label: 'TD', name: 'Tientallen duizendtallen', val: 10000 },
+        { key: 'D',  label: 'D',  name: 'Duizendtallen', val: 1000 },
+        { key: 'H',  label: 'H',  name: 'Honderdtallen', val: 100 },
+        { key: 'T',  label: 'T',  name: 'Tientallen', val: 10 },
+        { key: 'E',  label: 'E',  name: 'Eenheden', val: 1, isCommaAfter: true },
+        { key: 't',  label: 't',  name: 'Tienden', val: 0.1 },
+        { key: 'h',  label: 'h',  name: 'Honderdsten', val: 0.01 },
+        { key: 'd',  label: 'd',  name: 'Duizendsten', val: 0.001 }
+    ];
+
+    const counts = {};
+    columnsData.forEach(c => counts[c.key] = 0);
+
+    function initBoard() {
+        const board = document.getElementById('s1-board');
+        board.innerHTML = '';
+        columnsData.forEach(col => {
+            const colEl = document.createElement('div');
+            colEl.id = `s1-col-${col.key}`;
+            colEl.className = `column ${col.key} ${col.isCommaAfter ? 'comma-after' : ''}`;
+            colEl.innerHTML = `
+                <div class="header" title="${col.name}">${col.label}</div>
+                <button class="btn-add" onclick="SchijvenApp.addCounter('${col.key}')">+ Schijf</button>
+                <div class="drop-zone" id="s1-zone-${col.key}" onclick="SchijvenApp.removeCounter('${col.key}')" title="Tik om 1 schijfje te verwijderen"></div>
+            `;
+            board.appendChild(colEl);
+        });
+    }
+
+    function toggleColumnD() {
+        const showD = document.getElementById('s1-toggle-d').checked;
+        const colD = document.getElementById('s1-col-d');
+        if (colD) colD.style.display = showD ? 'flex' : 'none';
+        if (!showD && counts['d'] > 0) {
+            counts['d'] = 0;
+            renderCounters('d');
+        }
+        updateDisplays();
+    }
+
+    function addCounter(key) {
+        const idx = columnsData.findIndex(c => c.key === key);
+
+        if (idx === 0) {
+            // Miljoentallen: hoogste rang in dit schema, geen rang erboven om naar te hergroeperen
+            if (counts[key] < 9) {
+                counts[key]++;
+                renderCounters(key);
+                updateDisplays();
+            }
+            return;
+        }
+
+        if (counts[key] < 10) {
+            counts[key]++;
+            renderCounters(key);
+            updateDisplays();
+            if (counts[key] === 10) {
+                triggerRegroup(key, idx);
+            }
+        }
+    }
+
+    function triggerRegroup(key, idx) {
+        const zone = document.getElementById(`s1-zone-${key}`);
+        if (zone) zone.classList.add('regroup-glow');
+        setTimeout(() => {
+            if (zone) zone.classList.remove('regroup-glow');
+            counts[key] -= 10;
+            renderCounters(key);
+
+            const higher = columnsData[idx - 1];
+            if (higher) {
+                counts[higher.key]++;
+                renderCounters(higher.key, true);
+                updateDisplays();
+                if (counts[higher.key] === 10) {
+                    triggerRegroup(higher.key, idx - 1);
+                }
+            } else {
+                updateDisplays();
+            }
+        }, 700);
+    }
+
+    function removeCounter(key) {
+        if (counts[key] > 0) {
+            counts[key]--;
+            renderCounters(key);
+            updateDisplays();
+        }
+    }
+
+    function clearAll() {
+        Object.keys(counts).forEach(k => counts[k] = 0);
+        columnsData.forEach(c => renderCounters(c.key));
+        updateDisplays();
+    }
+
+    function renderCounters(key, highlightLast) {
+        const zone = document.getElementById(`s1-zone-${key}`);
+        if (!zone) return;
+        zone.innerHTML = '';
+        for (let i = 0; i < counts[key]; i++) {
+            const cnt = document.createElement('div');
+            cnt.className = 'counter';
+            if (highlightLast && i === counts[key] - 1) {
+                cnt.classList.add('counter-pop');
+            }
+            cnt.innerText = key;
+            zone.appendChild(cnt);
+        }
+    }
+
+    function updateDisplays() {
+        document.getElementById('s1-card-num').style.display = document.getElementById('s1-toggle-num').checked ? 'block' : 'none';
+        document.getElementById('s1-card-split').style.display = document.getElementById('s1-toggle-split').checked ? 'block' : 'none';
+        document.getElementById('s1-card-words').style.display = document.getElementById('s1-toggle-words').checked ? 'block' : 'none';
+
+        let total = 0;
+        columnsData.forEach(c => { total += counts[c.key] * c.val; });
+        total = Math.round(total * 1000) / 1000;
+
+        let numStr = total.toString().replace('.', ',');
+        document.getElementById('s1-val-num').innerText = numStr;
+
+        const splitParts = [];
+        columnsData.forEach(c => {
+            if (counts[c.key] > 0) splitParts.push(`${counts[c.key]}${c.label}`);
+        });
+        document.getElementById('s1-val-split').innerText = splitParts.length > 0 ? splitParts.join(' + ') : '0E';
+
+        document.getElementById('s1-val-words').innerText = NL_getReadVersion(total);
+    }
+
+    function init() {
+        initBoard();
+        updateDisplays();
+    }
+
+    return { toggleColumnD, addCounter, removeCounter, clearAll, updateDisplays, init };
+})();
+
+/* ============ APP 2: CIJFERS ============ */
+const CijfersApp = (function () {
+    const columnsData = [
+        { key: 'M',  label: 'M',  val: 1000000 },
+        { key: 'HD', label: 'HD', val: 100000 },
+        { key: 'TD', label: 'TD', val: 10000 },
+        { key: 'D',  label: 'D',  val: 1000 },
+        { key: 'H',  label: 'H',  val: 100 },
+        { key: 'T',  label: 'T',  val: 10 },
+        { key: 'E',  label: 'E',  val: 1, isCommaAfter: true },
+        { key: 't',  label: 't',  val: 0.1 },
+        { key: 'h',  label: 'h',  val: 0.01 },
+        { key: 'd',  label: 'd',  val: 0.001 }
+    ];
+
+    let counts = {};
+    columnsData.forEach(c => counts[c.key] = 0);
+    let history = [];
+
+    function initBoard() {
+        const board = document.getElementById('s2-board');
+        board.innerHTML = '';
+        columnsData.forEach(col => {
+            const colEl = document.createElement('div');
+            colEl.id = `s2-col-${col.key}`;
+            colEl.className = `column ${col.key} ${col.isCommaAfter ? 'comma-after' : ''}`;
+            colEl.innerHTML = `
+                <div class="header">${col.label}</div>
+                <button class="digit-btn" onclick="CijfersApp.changeDigit('${col.key}', 1)">&#9650;</button>
+                <div class="digit-display" id="s2-digit-${col.key}">0</div>
+                <button class="digit-btn" onclick="CijfersApp.changeDigit('${col.key}', -1)">&#9660;</button>
+            `;
+            board.appendChild(colEl);
+        });
+    }
+
+    function toggleColumnD() {
+        const showD = document.getElementById('s2-toggle-d').checked;
+        const colD = document.getElementById('s2-col-d');
+        if (colD) colD.style.display = showD ? 'flex' : 'none';
+        if (!showD && counts['d'] > 0) {
+            counts['d'] = 0;
+            renderDigits();
+        }
+        updateDisplays();
+    }
+
+    function changeDigit(key, delta) {
+        counts[key] = (counts[key] + delta + 10) % 10;
+        renderDigits();
+        updateDisplays();
+    }
+
+    function renderDigits() {
+        columnsData.forEach(c => {
+            const el = document.getElementById(`s2-digit-${c.key}`);
+            if (el) el.innerText = counts[c.key];
+        });
+    }
+
+    function getCurrentTotal() {
+        let total = 0;
+        columnsData.forEach(c => total += counts[c.key] * c.val);
+        return Math.round(total * 1000) / 1000;
+    }
+
+    function setTotalToCounts(newTotal) {
+        columnsData.forEach(c => counts[c.key] = 0);
+        const dVisible = document.getElementById('s2-toggle-d').checked;
+        let rem = Math.round(newTotal * 1000);
+
+        columnsData.forEach(c => {
+            if (c.key === 'd' && !dVisible) return; // duizendsten niet meetellen als kolom verborgen is
+            const unitVal = Math.round(c.val * 1000);
+            if (unitVal <= rem) {
+                const cnt = Math.floor(rem / unitVal);
+                counts[c.key] = Math.min(cnt, 9);
+                rem %= unitVal;
+            }
+        });
+
+        renderDigits();
+        updateDisplays();
+    }
+
+    function loadTeacherInput() {
+        const raw = document.getElementById('s2-teacher-input').value.trim().replace('.', ',');
+        if (!raw) return;
+
+        const num = parseFloat(raw.replace(',', '.'));
+        if (isNaN(num) || num < 0) {
+            alert("Voer een geldig positief getal in.");
+            return;
+        }
+
+        setTotalToCounts(num);
+        addHistory(`Ingegeven getal: ${formatNumber(num)}`);
+    }
+
+    function handleKeyPress(e) {
+        if (e.key === 'Enter') loadTeacherInput();
+    }
+
+    function multiply(factor) {
+        const oldVal = getCurrentTotal();
+        const newVal = Math.round(oldVal * factor * 100) / 100;
+        setTotalToCounts(newVal);
+        addHistory(`${formatNumber(oldVal)} × ${factor} = ${formatNumber(newVal)}`);
+    }
+
+    function divide(factor) {
+        const oldVal = getCurrentTotal();
+        const newVal = Math.round((oldVal / factor) * 100) / 100;
+        setTotalToCounts(newVal);
+        addHistory(`${formatNumber(oldVal)} : ${factor} = ${formatNumber(newVal)}`);
+    }
+
+    function addValue(val) {
+        const oldVal = getCurrentTotal();
+        const newVal = Math.max(0, Math.round((oldVal + val) * 100) / 100);
+        setTotalToCounts(newVal);
+        const sign = val > 0 ? '+' : '-';
+        addHistory(`${formatNumber(oldVal)} ${sign} ${Math.abs(val)} = ${formatNumber(newVal)}`);
+    }
+
+    function clearAll() {
+        Object.keys(counts).forEach(k => counts[k] = 0);
+        document.getElementById('s2-teacher-input').value = '';
+        renderDigits();
+        history = [];
+        document.getElementById('s2-history-list').innerText = 'Geen bewerkingen uitgevoerd.';
+        updateDisplays();
+    }
+
+    function formatNumber(num) {
+        return num.toString().replace('.', ',');
+    }
+
+    function addHistory(text) {
+        history.unshift(text);
+        document.getElementById('s2-history-list').innerHTML = history.join('<br>');
+    }
+
+    function updateDisplays() {
+        const total = getCurrentTotal();
+        document.getElementById('s2-val-num').innerText = formatNumber(total);
+
+        const splitParts = [];
+        columnsData.forEach(c => {
+            if (counts[c.key] > 0) splitParts.push(`${counts[c.key]}${c.label}`);
+        });
+        document.getElementById('s2-val-split').innerText = splitParts.length > 0 ? splitParts.join(' + ') : '0E';
+        document.getElementById('s2-val-words').innerText = NL_getReadVersion(total);
+    }
+
+    function init() {
+        initBoard();
+        updateDisplays();
+    }
+
+    return { changeDigit, toggleColumnD, loadTeacherInput, handleKeyPress, multiply, divide, addValue, clearAll, init };
+})();
+
+/* ============ INIT ============ */
+SchijvenApp.init();
+CijfersApp.init();
+</script>
+</body>
+</html>
